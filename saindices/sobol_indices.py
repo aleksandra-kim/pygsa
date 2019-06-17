@@ -1,148 +1,177 @@
-'''
-Functions that run Monte Carlo (MC) simulations and compute Sobol indices
-Input: Sampler class that can generate samples (inputs) for the model,
-        samples can be generated one at a time using 'next' and all simultaneously as a matrix of size NxD,
-        where N is the # of MC runs and D - # of inputs
-       Model, such that output = Model(sample)
-'''
-
 from sampling.sobol_sequence import SobolSample
 import numpy as np
 import time
+from copy import copy
 
 
-#Compute Sobol indices while generating samples separately
-def sobol_indices_one(Samp,Model):
-    """C: Every function should have a docstring (like this) which tells what it does (if not clear from the name), the inputs arguments, and what the function returns."""
+def sobol_indices_one(Sampler,Model):
+    """
+    Run Monte Carlo simulations and compute Sobol indices while generating samples one at a time.
 
-    """C: Can we say Sampler instead of Samp?"""
+    Parameters
+    ----------
+    Sampler : class
+        Class that generates one sample of size n_dimension at a time using method __next__ or 
+        all samples simultaneously as a matrix of size n_samples x n_dimensions    
+    Model
+        Object that generates scalar model output given one sample of size n_dimension
 
-	#we generate N number of samples, actual number of MC runs is N//2
+    Returns
+    -------
+    first_index : np.array
+        An array object that contains first-order Sobol indices for all n_dimensions
+    total_index : np.array
+        An array object that contains total order Sobol indices for all n_dimensions
 
-    """C: Can't we just use Samp.N?"""
-	N = Samp.N
-	D = Samp.D
-
-    """C: Note that this will round down. May not be desired behaviour."""
-
-    nruns = N//2
-
-	next(Samp) #TODO change later, some bug
-
-    """C: Consider using numpy arrays here, e.g. np.zeros(nruns). Much better
-    performance for numerical stuff plus broadcasting."""
-
-    """C: Ideally these would be defined in the docstring"""
-
-	y_A = [0]*nruns
-	y_B = [0]*nruns
-	y_j = np.zeros([nruns,D])
-
-	total_index = [0]*D
-	first_index = [0]*D
-
-    """C: Could also be:
-
-    for i, sample_A, sample_B in zip(range(nruns), Samp, Samp):
+    Literature
+    ----------
+    [2009] Saltelli et al 
+    Variance based sensitivity analysis of model output. Design and estimator for the total sensitivity index
+    https://doi.org/10.1016/j.cpc.2009.09.018
 
     """
 
-	for i in range(nruns): #compute total indices for all parameters
+	#Sampler generates n_samples number of samples, actual number of MC runs is n_samples//2
+    n_runs = Sampler.n_samples//2
+    next(Sampler) #TODO change later, some bug
 
-		sample_A = next(Samp)
-		sample_B = next(Samp)
+    """C: Ideally these would be defined in the docstring"""
+    """S: didn't understand this comment"""
 
-        """C: Need more documentation on what is returned here (vector? float?)"""
+    y_A = np.zeros(n_runs)
+    y_B = np.zeros(n_runs)
+    y_j = np.zeros([n_runs,Sampler.n_dimensions])
 
-		y_A[i]   = Model(sample_A)
-		y_B[i]   = Model(sample_B)
+    total_index = np.zeros(Sampler.n_dimensions)
+    first_index = np.zeros(Sampler.n_dimensions)
 
-		for j in range(D):
+    #Monte Carlo simulations
+    for i, sample_A, sample_B in zip(range(n_runs), Sampler, Sampler):
 
-            """C: Maybe need to make a copy?"""
+        y_A[i]   = Model(sample_A)
+        y_B[i]   = Model(sample_B)
 
-			sample_j = sample_A
-			sample_j[j] = sample_B[j]
-			y_j[i][j] = Model(sample_j)
+        for j in range(Sampler.n_dimensions):
 
-	for j in range(D):
+            sample_j = copy(sample_A)
+            sample_j[j] = sample_B[j]
+            y_j[i][j] = Model(sample_j)
 
-        """C: This would be much faster if they were numpy arrays"""
+    #Total indices computation for all dimensions
+    for j in range(Sampler.n_dimensions):
 
-        total_index[j] = [(y_A[i]-y_j[i,j])**2 for i in range(nruns)]
+        total_index[j] = [(y_A[i]-y_j[i,j])**2 for i in range(n_runs)]
+        total_index[j] = sum(total_index[j]) / 2 / n_runs
 
-        """C: Normally would have some space here, e.g. x / y * z"""
-
-		total_index[j] = sum(total_index[j])/2/nruns
-
-		first_index[j] = [y_B[i]*(y_j[i,j]-y_A[i]) for i in range(nruns)]
-		first_index[j] = sum(first_index[j])/nruns
-
-	return first_index,total_index
-
-
-#Compute Sobol indices while generating all samples simultaneously
-def sobol_indices_all(Samp,Model):
-
-	#we generate N number of samples, actual number of MC runs is N//2
-    N = Samp.N
-    D = Samp.D
-    nruns = N//2
-
-    samples = Samp.generate_all_samples() #change later, there's a bug
-
-    y_A = [0]*nruns
-    y_B = [0]*nruns
-    y_j = [0]*nruns
-
-    total_index = [0]*D
-    first_index = [0]*D
-
-    A = samples[:nruns]
-    B = samples[nruns:]
-
-    for i in range(nruns):
-        y_A[i] = Model(A[i])
-        y_B[i] = Model(B[i])
-
-    for j in range(D): #compute total indices for all parameters
-
-        J = A
-        J[:,j] = B[:,j]
-
-        for i in range(nruns):
-            y_j[i] = Model(J[i])
-
-        total_index[j] = [(y_A[k]-y_j[k])**2 for k in range(nruns)]
-        total_index[j] = sum(total_index[j])/2/nruns
-
-        first_index[j] = [y_B[k]*(y_j[k]-y_A[k]) for k in range(nruns)]
-        first_index[j] = sum(first_index[j])/nruns
+        first_index[j] = [y_B[i]*(y_j[i,j]-y_A[i]) for i in range(n_runs)]
+        first_index[j] = sum(first_index[j]) / n_runs
 
     return first_index,total_index
 
 
-#wrapper function that chooses how to calculate sobol indices depending on the problem at stake
-#for now, if problem has <1000 dimensions, generate all samples simultaneously. Otherwise, one sample at a time
-def sobol_indices(N,D,Model,Samp=None):
+def sobol_indices_all(Sampler,Model):
+    """
+    Run Monte Carlo simulations and compute Sobol indices while generating all samples at the same time.
 
-	if D < 5000:
+    Parameters
+    ----------
+    Sampler : class
+        Class that generates one sample of size n_dimension at a time using method __next__ or 
+        all samples simultaneously as a matrix of size n_samples x n_dimensions    
+    Model
+        Object that generates scalar model output given one sample of size n_dimension
 
-        """C: if Samp is None"""
+    Returns
+    -------
+    first_index : np.array
+        An array object that contains first-order Sobol indices for all n_dimensions
+    total_index : np.array
+        An array object that contains total order Sobol indices for all n_dimensions
 
-        if Samp==None:
-			Samp = SobolSample(N*2,D)
-		t0 = time.time()
-		first_index,total_index = sobol_indices_all(Samp,Model)
-		t = time.time()-t0
-		return t
-	else:
-		if Samp==None:
-			Samp = SobolSample(N*2+1,D) #TODO +1 occurs due to a bug
-		t0 = time.time()
-		first_index,total_index = sobol_indices_one(Samp,Model)
-		t = time.time()-t0
-		return t
+    Literature
+    ----------
+    [2009] Saltelli et al 
+    Variance based sensitivity analysis of model output. Design and estimator for the total sensitivity index
+    https://doi.org/10.1016/j.cpc.2009.09.018
+
+    """
+
+	#Sampler generates n_samples number of samples, actual number of MC runs is n_samples//2
+    n_runs = Sampler.n_samples//2
+
+    samples = Sampler.generate_all_samples() #TODO check whether there's a bug
+
+    y_A = np.zeros(n_runs)
+    y_B = np.zeros(n_runs)
+    y_j = np.zeros(n_runs)
+
+    total_index = np.zeros(Sampler.n_dimensions)
+    first_index = np.zeros(Sampler.n_dimensions)
+
+    A = samples[:n_runs]
+    B = samples[n_runs:]
+
+    #Monte Carlo simulations without resampling
+    for i in range(n_runs):
+        y_A[i] = Model(A[i])
+        y_B[i] = Model(B[i])
+
+    #Monte Carlo simulations of resampled inputsm and total indices computation for all dimensions
+    for j in range(Sampler.n_dimensions): 
+
+        J = copy(A)
+        J[:,j] = B[:,j]
+        y_j = [Model(J[i]) for i in range(n_runs)]
+
+        total_index_temp = [(y_A[k]-y_j[k])**2 for k in range(n_runs)]
+        total_index[j] = sum(total_index_temp) / 2 / n_runs
+
+        first_index_temp = [y_B[k]*(y_j[k]-y_A[k]) for k in range(n_runs)]
+        first_index[j] = sum(first_index_temp) / n_runs
+
+    return first_index,total_index
+
+
+def sobol_indices(n_runs,n_dimensions,Model,Sampler=None):
+    """
+    Wrapper function that chooses how to calculate Sobol indices depending on the problem.
+    #For now, if problem has <1000 dimensions, generate all samples simultaneously. Otherwise, one sample at a time.
+
+    Parameters
+    ----------
+    n_runs : int
+        Number of Monte Carlo runs
+    n_dimensions : int
+        Number of parameters in the model that vary when performing sensitivity analysis
+    Model
+        Object that generates scalar model output given one sample of size n_dimension
+    Sampler : class
+        Class that generates one sample of size n_dimension at a time using method __next__ or 
+        all samples simultaneously as a matrix of size n_samples x n_dimensions. 
+        If not specified, will be chosen as Sobol quasi random sequences Sampler
+
+    Returns TODO now returns time, change to return first and total order indices
+    -------
+    first_index : np.array
+        An array object that contains first-order Sobol indices for all n_dimensions
+    total_index : np.array
+        An array object that contains total order Sobol indices for all n_dimensions
+    """
+
+    if n_dimensions < 10:
+        if Sampler is None:
+        	Sampler = SobolSample(n_runs*2,n_dimensions)
+        t0 = time.time()
+        first_index,total_index = sobol_indices_all(Sampler,Model)
+        t = time.time()-t0
+        return t
+    else:
+        if Sampler is None:
+        	Sampler = SobolSample(n_runs*2+1,n_dimensions) #TODO +1 is added due to a bug
+        t0 = time.time()
+        first_index,total_index = sobol_indices_one(Sampler,Model)
+        t = time.time()-t0
+        return t
 
 
 
