@@ -31,7 +31,7 @@ class SobolSample:
 
     def __init__(self,n_samples,n_dimensions,scale=31):
 
-        if len(directions) < n_dimensions-1:
+        if n_dimensions > len(directions) + 1:
             raise ValueError("Error in Sobol sequence: not enough dimensions")
 
         L = int(math.ceil(math.log(n_samples) / math.log(2)))
@@ -82,13 +82,6 @@ class SobolSample:
         V = np.zeros([L+1,n_dimensions], dtype=int)
         V[1:,0] = [1 << (self.scale - j) for j in range(1, L + 1)]
 
-        """C: ???
-
-        for i in range(n_dimensions):
-            m = np.array(directions.directions[i], dtype=int)
-
-        """
-
         """C: Faster to already have as array:
 
         In [1]: from directions import directions
@@ -134,21 +127,22 @@ class SobolSample:
         """
         """S: this part I didn't understand :("""
 
-        for i in range(1,n_dimensions):
+        for i in range(n_dimensions-1):
 
-            m = np.array(directions[i - 1], dtype=int)
+            m = np.array(directions[i], dtype=int)
             s = len(m) - 1
 
             # The following code discards the first row of the ``m`` array
             # Because it has floating point errors, e.g. values of 2.24e-314
             if L <= s:
-                V[1:,i] = [1 << (self.scale-j) for j in range(1, L+1)]
+                V[1:,i+1] = [m[j] << (self.scale-j) for j in range(1, L+1)]
             else:
-                V[1:s+1,i] = [m[j] << (self.scale-j) for j in range(1,s+1)]
+                V[1:s+1,i+1] = [m[j] << (self.scale-j) for j in range(1,s+1)]
                 for j in range(s + 1, L + 1):
-                    V[j,i] = V[j-s,i] ^ (V[j-s,i] >> s)
+                    V[j,i+1] = V[j-s,i+1] ^ (V[j-s,i+1] >> s)
                     for k in range(1, s):
-                        V[j,i] ^= ((m[0] >> (s - 1 - k)) & 1) * V[j-k][i]
+                        V[j,i+1] ^= ((m[0] >> (s - 1 - k)) & 1) * V[j-k][i+1]
+
         return V
 
 
