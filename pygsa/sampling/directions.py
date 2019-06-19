@@ -44,6 +44,5 @@ class IndexedMemmappedArray:
         row = self.data[int(index), :]
         return row[row != -1]
 
-
 # TODO: add `directions` to __init__
 directions = IndexedMemmappedArray()

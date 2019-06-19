@@ -60,11 +60,11 @@ def sobol_indices_one(Sampler,Model):
     #Total indices computation for all dimensions
     for j in range(Sampler.n_dimensions):
 
-        total_index[j] = [(y_A[i]-y_j[i,j])**2 for i in range(n_runs)]
-        total_index[j] = sum(total_index[j]) / 2 / n_runs
+        total_index_temp = [(y_A[i]-y_j[i,j])**2 for i in range(n_runs)]
+        total_index[j] = sum(total_index_temp) / 2 / n_runs
 
-        first_index[j] = [y_B[i]*(y_j[i,j]-y_A[i]) for i in range(n_runs)]
-        first_index[j] = sum(first_index[j]) / n_runs
+        first_index_temp = [y_B[i]*(y_j[i,j]-y_A[i]) for i in range(n_runs)]
+        first_index[j] = sum(first_index_temp) / n_runs
 
     return first_index,total_index
 
@@ -158,20 +158,20 @@ def sobol_indices(n_runs,n_dimensions,Model,Sampler=None):
         An array object that contains total order Sobol indices for all n_dimensions
     """
 
-    if n_dimensions < 10:
+    if n_dimensions < 1000:
         if Sampler is None:
         	Sampler = SobolSample(n_runs*2,n_dimensions)
         t0 = time.time()
         first_index,total_index = sobol_indices_all(Sampler,Model)
         t = time.time()-t0
-        return t
     else:
         if Sampler is None:
         	Sampler = SobolSample(n_runs*2+1,n_dimensions) #TODO +1 is added due to a bug
         t0 = time.time()
         first_index,total_index = sobol_indices_one(Sampler,Model)
         t = time.time()-t0
-        return t
+    print(t)
+    return first_index,total_index
 
 
 

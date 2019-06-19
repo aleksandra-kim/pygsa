@@ -1,16 +1,38 @@
-"""
-Module that generates quasi-random Sobol sequences. They are needed for a more uniform space coverage.
-"""
+# Code on Sobol sequences generation adapted from SALib: https://github.com/SALib/
+# The MIT License (MIT)
 
-"""C: Can we have tests for expected values (e.g. from sampler)?"""
-"""S: In which format? I already ran stress tests."""
+# Copyright (c) 2013-2017 Jon Herman, Will Usher, and others.
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# Module that generates quasi-random Sobol sequences. They are needed for a more uniform space coverage.
+# see https://web.maths.unsw.edu.au/~fkuo/sobol/
+# Papers:
+# S. Joe and F. Y. Kuo, Remark on Algorithm 659: Implementing Sobol's quasirandom sequence generator, 2003
+# S. Joe and F. Y. Kuo, Constructing Sobol sequences with better two-dimensional projections, 2008
 
 import numpy as np
 import math
 import sys
 
 #local files
-from .directions import directions
+from sampling.directions import directions
 
 
 class SobolSample:
@@ -31,7 +53,7 @@ class SobolSample:
 
     def __init__(self,n_samples,n_dimensions,scale=31):
 
-        if n_dimensions > len(directions) + 1:
+        if n_dimensions > len(directions.data) + 1:
             raise ValueError("Error in Sobol sequence: not enough dimensions")
 
         L = int(math.ceil(math.log(n_samples) / math.log(2)))
@@ -81,51 +103,6 @@ class SobolSample:
 
         V = np.zeros([L+1,n_dimensions], dtype=int)
         V[1:,0] = [1 << (self.scale - j) for j in range(1, L + 1)]
-
-        """C: Faster to already have as array:
-
-        In [1]: from directions import directions
-           ...:
-
-        In [2]: import numpy as np
-           ...:
-
-        In [3]: a = np.zeros((len(directions), max([len(row) for row in directions])))
-           ...:
-
-        In [4]: for i, row in enumerate(directions):
-           ...:     a[i, :len(row)] = row
-           ...:
-
-        In [5]: def get_with_mask(array):
-           ...:     for row in array:
-           ...:         row[row > 0]
-           ...:
-
-        In [6]: def get_with_count(array):
-           ...:     for row in array:
-           ...:         row[:np.count_nonzero(row)]
-           ...:
-
-        In [7]: def convert(lst):
-           ...:     for row in lst:
-           ...:         np.array(row, dtype=int)
-           ...:
-
-        In [8]: %timeit get_with_mask(a)
-           ...:
-        1.95 µs ± 51.6 ns per loop (mean ± std. dev. of 7 runs, 1000000 loops each)
-
-        In [9]: %timeit convert(directions)
-           ...:
-        49 ms ± 3.04 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
-
-        In [10]: %timeit get_with_count(a)
-            ...:
-        792 ns ± 18.6 ns per loop (mean ± std. dev. of 7 runs, 1000000 loops each)
-
-        """
-        """S: this part I didn't understand :("""
 
         for i in range(n_dimensions-1):
 
