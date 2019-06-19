@@ -1,4 +1,4 @@
-from pygsa import directions
+from pygsa.sampling import directions
 import numpy as np
 import pytest
 
@@ -39,5 +39,5 @@ def test_directions_data():
 
 
 def test_directions_index_error():
-    with pytest.raises():
+    with pytest.raises(ValueError):
         directions["a"]

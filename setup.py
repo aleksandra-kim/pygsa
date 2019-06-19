@@ -6,7 +6,7 @@ root_dir = os.path.dirname(__file__)
 if root_dir:
     os.chdir(root_dir)
 
-# Probably should be changed, __init__.py is no longer required for Python 3
+
 for dirpath, dirnames, filenames in os.walk('pygsa'):
     # Ignore dirnames that start with '.'
     if '__init__.py' in filenames:
@@ -31,21 +31,15 @@ setup(
     author="Aleksandra Kim",
     author_email="aleksandra.kim@icloud.com",
     license="BSD 3-clause",
-    # Only if you have non-python data (CSV, etc.). Might need to change the directory name as well.
-    # package_data={'your_name_here': package_files(os.path.join('pygsa', 'data'))},
-    # entry_points = {
-    #     'console_scripts': [
-    #         'pygsa-cli = pygsa.bin.rename_me_cli:main',
-    #     ]
-    # },
+    package_data={'pygsa': package_files(os.path.join('pygsa', 'sampling', 'data'))},
     install_requires=[
-        'appdirs',
-        'docopt',
+        'numpy',
+        'scipy',
     ],
     url="https://github.com/aleksandra-kim/pygsa",
     long_description_content_type='text/markdown',
     long_description=open('README.md').read(),
-    description='your_name_here',
+    description='Global sensitivity analysis for large models',
     classifiers=[
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: Developers',
