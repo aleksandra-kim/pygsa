@@ -1,4 +1,4 @@
-from sampling.sobol_sequence import SobolSample
+from .. import SobolSample
 import numpy as np
 import time
 from copy import copy
@@ -11,8 +11,8 @@ def sobol_indices_one(Sampler,Model):
     Parameters
     ----------
     Sampler : class
-        Class that generates one sample of size n_dimension at a time using method __next__ or 
-        all samples simultaneously as a matrix of size n_samples x n_dimensions    
+        Class that generates one sample of size n_dimension at a time using method __next__ or
+        all samples simultaneously as a matrix of size n_samples x n_dimensions
     Model
         Object that generates scalar model output given one sample of size n_dimension
 
@@ -25,7 +25,7 @@ def sobol_indices_one(Sampler,Model):
 
     Literature
     ----------
-    [2009] Saltelli et al 
+    [2009] Saltelli et al
     Variance based sensitivity analysis of model output. Design and estimator for the total sensitivity index
     https://doi.org/10.1016/j.cpc.2009.09.018
 
@@ -76,8 +76,8 @@ def sobol_indices_all(Sampler,Model):
     Parameters
     ----------
     Sampler : class
-        Class that generates one sample of size n_dimension at a time using method __next__ or 
-        all samples simultaneously as a matrix of size n_samples x n_dimensions    
+        Class that generates one sample of size n_dimension at a time using method __next__ or
+        all samples simultaneously as a matrix of size n_samples x n_dimensions
     Model
         Object that generates scalar model output given one sample of size n_dimension
 
@@ -90,7 +90,7 @@ def sobol_indices_all(Sampler,Model):
 
     Literature
     ----------
-    [2009] Saltelli et al 
+    [2009] Saltelli et al
     Variance based sensitivity analysis of model output. Design and estimator for the total sensitivity index
     https://doi.org/10.1016/j.cpc.2009.09.018
 
@@ -117,7 +117,7 @@ def sobol_indices_all(Sampler,Model):
         y_B[i] = Model(B[i])
 
     #Monte Carlo simulations of resampled inputsm and total indices computation for all dimensions
-    for j in range(Sampler.n_dimensions): 
+    for j in range(Sampler.n_dimensions):
 
         J = copy(A)
         J[:,j] = B[:,j]
@@ -146,8 +146,8 @@ def sobol_indices(n_runs,n_dimensions,Model,Sampler=None):
     Model
         Object that generates scalar model output given one sample of size n_dimension
     Sampler : class
-        Class that generates one sample of size n_dimension at a time using method __next__ or 
-        all samples simultaneously as a matrix of size n_samples x n_dimensions. 
+        Class that generates one sample of size n_dimension at a time using method __next__ or
+        all samples simultaneously as a matrix of size n_samples x n_dimensions.
         If not specified, will be chosen as Sobol quasi random sequences Sampler
 
     Returns TODO now returns time, change to return first and total order indices

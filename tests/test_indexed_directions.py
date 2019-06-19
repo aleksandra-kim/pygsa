@@ -1,4 +1,4 @@
-from pygsa import directions
+from pygsa.sampling import directions
 import numpy as np
 import pytest
 

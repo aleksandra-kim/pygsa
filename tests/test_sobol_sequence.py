@@ -5,7 +5,7 @@ import random as rd
 
 def test_output():
 
-	for i in range(100):
+	for i in range(10):
 		n_runs = rd.randint(1,1000)
 		n_dimensions = rd.randint(1,100)
 

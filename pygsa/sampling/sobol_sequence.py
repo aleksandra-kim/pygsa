@@ -32,12 +32,12 @@ import math
 import sys
 
 #local files
-from sampling.directions import directions
+from . import directions
 
 
 class SobolSample:
     """
-    Generate Sobol quasi random sequences of size n_dimension one at a time using method __next__ or 
+    Generate Sobol quasi random sequences of size n_dimension one at a time using method __next__ or
     all samples simultaneously as a matrix of size n_samples x n_dimensions.
 
     Literature
