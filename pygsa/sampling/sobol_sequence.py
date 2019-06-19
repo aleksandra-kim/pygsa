@@ -32,7 +32,7 @@ import math
 import sys
 
 #local files
-from sampling.directions import directions
+from .directions import directions
 
 
 class SobolSample:
