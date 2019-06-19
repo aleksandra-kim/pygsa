@@ -105,3 +105,4 @@ venv.bak/
 
 # Apple MacOS
 .DS_Store
+pygsa/.DS_Store
