@@ -31,13 +31,8 @@ import numpy as np
 import math
 import sys
 
-<<<<<<< HEAD
-#local files
-from .directions import directions
-=======
 # local files
 from . import directions
->>>>>>> f7e5187a40a763e4de815afefe430d767ddfe050
 
 
 class SobolSample:

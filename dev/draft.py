@@ -8,8 +8,9 @@ from scipy.stats import lognorm, norm, triang
 from pypardiso import spsolve
 from itertools import compress
 
-from constants import *
-from saindices.sobol_indices import sobol_indices
+#local files
+from pygsa.constants import *
+from pygsa.saindices.sobol_indices import sobol_indices
 
 
 ###1. LCA model
