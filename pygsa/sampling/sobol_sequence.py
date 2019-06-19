@@ -31,13 +31,13 @@ import numpy as np
 import math
 import sys
 
-#local files
-from sampling.directions import directions
+# local files
+from . import directions
 
 
 class SobolSample:
     """
-    Generate Sobol quasi random sequences of size n_dimension one at a time using method __next__ or 
+    Generate Sobol quasi random sequences of size n_dimension one at a time using method __next__ or
     all samples simultaneously as a matrix of size n_samples x n_dimensions.
 
     Literature
@@ -51,7 +51,7 @@ class SobolSample:
 
     """
 
-    def __init__(self,n_samples,n_dimensions,scale=31):
+    def __init__(self, n_samples, n_dimensions, scale=31):
 
         if n_dimensions > len(directions.data) + 1:
             raise ValueError("Error in Sobol sequence: not enough dimensions")
@@ -61,13 +61,17 @@ class SobolSample:
         if L > scale:
             raise ValueError("Error in Sobol sequence: not enough bits")
 
-        self.n_samples, self.n_dimensions, self.scale, self.L = n_samples, n_dimensions, scale, L
+        self.n_samples, self.n_dimensions, self.scale, self.L = (
+            n_samples,
+            n_dimensions,
+            scale,
+            L,
+        )
         self.current = 0
-        self.Y = np.array([int(0)]*self.n_dimensions)
+        self.Y = np.array([int(0)] * self.n_dimensions)
         self.V = self.generate_V()
 
-
-    def index_of_least_significant_zero_bit(self,value):
+    def index_of_least_significant_zero_bit(self, value):
         """
         Generate index of the least significant zero bit of a value.
 
@@ -83,11 +87,10 @@ class SobolSample:
         """
 
         index = 1
-        while((value & 1) != 0):
+        while (value & 1) != 0:
             value >>= 1
             index += 1
         return index
-
 
     def generate_V(self):
         """
@@ -101,10 +104,10 @@ class SobolSample:
 
         n_samples, n_dimensions, L = self.n_samples, self.n_dimensions, self.L
 
-        V = np.zeros([L+1,n_dimensions], dtype=int)
-        V[1:,0] = [1 << (self.scale - j) for j in range(1, L + 1)]
+        V = np.zeros([L + 1, n_dimensions], dtype=int)
+        V[1:, 0] = [1 << (self.scale - j) for j in range(1, L + 1)]
 
-        for i in range(n_dimensions-1):
+        for i in range(n_dimensions - 1):
 
             m = np.array(directions[i], dtype=int)
             s = len(m) - 1
@@ -112,16 +115,17 @@ class SobolSample:
             # The following code discards the first row of the ``m`` array
             # Because it has floating point errors, e.g. values of 2.24e-314
             if L <= s:
-                V[1:,i+1] = [m[j] << (self.scale-j) for j in range(1, L+1)]
+                V[1:, i + 1] = [m[j] << (self.scale - j) for j in range(1, L + 1)]
             else:
-                V[1:s+1,i+1] = [m[j] << (self.scale-j) for j in range(1,s+1)]
+                V[1 : s + 1, i + 1] = [
+                    m[j] << (self.scale - j) for j in range(1, s + 1)
+                ]
                 for j in range(s + 1, L + 1):
-                    V[j,i+1] = V[j-s,i+1] ^ (V[j-s,i+1] >> s)
+                    V[j, i + 1] = V[j - s, i + 1] ^ (V[j - s, i + 1] >> s)
                     for k in range(1, s):
-                        V[j,i+1] ^= ((m[0] >> (s - 1 - k)) & 1) * V[j-k][i+1]
+                        V[j, i + 1] ^= ((m[0] >> (s - 1 - k)) & 1) * V[j - k][i + 1]
 
         return V
-
 
     def generate_sample(self):
         """
@@ -140,25 +144,24 @@ class SobolSample:
         """S: How..?"""
 
         for i in range(self.n_dimensions):
-            self.Y[i] ^= self.V[self.index_of_least_significant_zero_bit(self.current - 1),i]
+            self.Y[i] ^= self.V[
+                self.index_of_least_significant_zero_bit(self.current - 1), i
+            ]
             sample_one[i] = float(self.Y[i] / math.pow(2, self.scale))
         self.current += 1
         return sample_one
 
-
     def __iter__(self):
         return self
 
-
     def __next__(self):
-        if self.current > self.n_samples-1:
+        if self.current > self.n_samples - 1:
             raise StopIteration
         elif self.current == 0:
             self.current = 1
             return self.Y
         else:
             return self.generate_sample()
-
 
     def generate_all_samples(self):
         """
@@ -172,18 +175,10 @@ class SobolSample:
         """
 
         n_samples, n_dimensions, V = self.n_samples, self.n_dimensions, self.V
-        sample_all = np.zeros([n_samples,n_dimensions])
+        sample_all = np.zeros([n_samples, n_dimensions])
 
         X = int(0)
         for j in range(1, n_samples):
             X ^= V[self.index_of_least_significant_zero_bit(j - 1)]
             sample_all[j][:] = [float(x / math.pow(2, self.scale)) for x in X]
         return sample_all
-
-
-
-
-
-
-
-

@@ -29,9 +29,8 @@ before_install:
     fi
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pypardiso appdirs pytest pytest-cov coveralls;
+      conda create -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy salib pytest pytest-cov coveralls;
       source activate test-environment;
-      pip install SALib;
       pip3 install -e .;
     else
       pip3 install -r ci/macos-travis.txt;
@@ -41,7 +40,7 @@ script:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       pwd;
       ls;
-      pytest --cov=<pygsa>;
+      pytest --cov=pygsa;
       coveralls;
       # if [ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" ]; then
       #   conda install conda-build anaconda-client conda-verify;
