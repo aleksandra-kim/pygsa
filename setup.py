@@ -34,6 +34,7 @@ setup(
     package_data={'pygsa': package_files(os.path.join('pygsa', 'sampling', 'data'))},
     install_requires=[
         'numpy',
+        'scipy',
     ],
     url="https://github.com/aleksandra-kim/pygsa",
     long_description_content_type='text/markdown',
