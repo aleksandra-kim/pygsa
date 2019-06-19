@@ -1,9 +1,9 @@
 __all__ = [
-        'SobolSample',
-        'sobol_indices',
-        'sobol_indices_all',
-        'sobol_indices_one',
-        'THREE_SIGMA_Q',
+    "SobolSample",
+    "sobol_indices",
+    "sobol_indices_all",
+    "sobol_indices_one",
+    "THREE_SIGMA_Q",
 ]
 
 __version__ = (0, 1)
