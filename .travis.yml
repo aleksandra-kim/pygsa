@@ -29,8 +29,9 @@ before_install:
     fi
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      conda create -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy salib pytest pytest-cov coveralls;
+      conda create -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy pytest pytest-cov coveralls;
       source activate test-environment;
+      pip install salib;
       pip3 install -e .;
     else
       pip3 install -r ci/macos-travis.txt;
