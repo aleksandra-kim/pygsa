@@ -1,0 +1,32 @@
+package:
+  name: pygsa-dev
+  version: {{ environ['VERSION'] }}
+
+source:
+  path: ..
+
+build:
+  noarch_python: True
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record record.txt
+  script_env:
+   - VERSION
+   - CONDA_BLD_PATH
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    - numpy scipy pytest pytest-cov coveralls
+
+test:
+  imports:
+    - {{ name }}
+
+about:
+  home: https://github.com/aleksandra-kim/pygsa
+  license: BSD License
+  summary: 'Python package for global sensitivity analysis.'
+license_family: BSD
