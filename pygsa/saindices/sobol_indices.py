@@ -172,5 +172,4 @@ def sobol_indices(n_runs, n_dimensions, Model, Sampler=None):
         t0 = time.time()
         first_index, total_index = sobol_indices_one(Sampler, Model)
         t = time.time() - t0
-    print(t)
     return first_index, total_index
