@@ -154,6 +154,16 @@ class GSAinLCA:
 
 
 
+	def replace_non_parameterized():
+		return amount_tech, amount bio
+
+
+
+	def replace_parameterized():
+		return amount_tech, amount bio
+
+
+
 	def model(self,sample):
 
 		lca = self.lca
