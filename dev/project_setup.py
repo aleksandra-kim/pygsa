@@ -27,8 +27,8 @@ for input_ in inputs:
 
 n_runs = 2
 
-first, total = sobol_indices(n_runs, n_dimensions, gsa_in_lca.model, Sampler=None)
-print([first, total])
+# first, total = sobol_indices(n_runs, n_dimensions, gsa_in_lca.model, Sampler=None)
+# print([first, total])
 
 
 

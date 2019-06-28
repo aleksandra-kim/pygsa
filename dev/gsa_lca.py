@@ -2,10 +2,9 @@
 
 
 import numpy as np
-from scipy.stats import lognorm, norm, triang
-from itertools import compress
 from pypardiso import spsolve
-
+from pygsa.sampling.convert_distributions import *
+from klausen.named_parameters import NamedParameters
 
 #Local files
 from pygsa.constants import *
@@ -20,7 +19,7 @@ class GSAinLCA:
 
 		self.inputs = inputs
 
-		#Extract databases names
+		#Extract databases names, TODO implement smth simpler 
 		db = set()
 		db.update( set([key[0] for key in lca.activity_dict.keys()]) )
 		db.update( set([key[0] for key in lca.biosphere_dict.keys()]) )
@@ -33,9 +32,6 @@ class GSAinLCA:
 
 		#Generate inputs dictionary
 		self.split_inputs()
-
-		self.q_low  = (1-THREE_SIGMA_Q)/2
-		self.q_high = (1+THREE_SIGMA_Q)/2
 
 
 
@@ -105,100 +101,116 @@ class GSAinLCA:
 
 
 
-	def get_distr_indices_params(self,params,id_distr):
-		list_ = params['uncertainty_type']==id_distr
-		indices = list(compress(range(len(list_)), list_))
-		params = params[indices]
-		return indices,params
-
-
-
 	def convert_sample_to_proper_distribution(self,params,sample):
 		#params should have uncertainty information in the same format as stats_array
 
 		assert len(params) == len(sample)
 
 		#Info on distributions
-		indices_lognor,params_lognor = self.get_distr_indices_params(params,ID_LOGNOR)
-		indices_normal,params_normal = self.get_distr_indices_params(params,ID_NORMAL)
-		indices_triang,params_triang = self.get_distr_indices_params(params,ID_TRIANG)
+		indices_lognor, params_lognor = get_distr_indices_params(params,ID_LOGNOR)
+		indices_normal, params_normal = get_distr_indices_params(params,ID_NORMAL)
+		indices_triang, params_triang = get_distr_indices_params(params,ID_TRIANG)
+		indices_unifor, params_unifor = get_distr_indices_params(params,ID_UNIFOR)
+		indices_dscr_u, params_dscr_u = get_distr_indices_params(params,ID_DSCR_U)
 		n_lognor = len(params_lognor)
 		n_normal = len(params_normal)
 		n_triang = len(params_triang)
+		n_unifor = len(params_unifor)
+		n_dscr_u = len(params_dscr_u)
 
-		converted_sample = np.zeros(len(params))
+		#Lognormal
+		i_start, i_end = 0, n_lognor
+		params_lognor_converted = convert_sample_to_lognor(params_lognor,sample[i_start:i_end])
 
-		#Convert uniform to lognormal distribution
-		q = (self.q_high-self.q_low)*sample[ : n_lognor] + self.q_low
-		params_lognor_converted = lognorm.ppf(q,s=params_lognor['scale'],scale=np.exp(params_lognor['loc']))
-		del q
+		#Normal
+		i_start, i_end = i_end, i_end+n_normal
+		params_normal_converted = convert_sample_to_normal(params_normal,sample[i_start:i_end])
 
-		#Convert uniform to normal distribution
-		q = (self.q_high-self.q_low)*sample[n_lognor : n_lognor+n_normal] + self.q_low
-		params_normal_converted  = norm.ppf(q,loc=params_normal['loc'],scale=params_normal['scale'])
-		del q
+		#Triangular
+		i_start, i_end = i_end, i_end+n_triang
+		params_triang_converted = convert_sample_to_triang(params_triang,sample[i_start:i_end])		
 
-		#Convert uniform to triangular distribution
-		q = sample[n_lognor+n_normal : n_lognor+n_normal+n_triang]
-		loc   = params_triang['minimum']
-		scale = params_triang['maximum']-params_triang['minimum']
-		c     = (params_triang['loc']-loc)/scale
-		params_triang_converted = triang.ppf(q,c=c,loc=loc,scale=scale)
+		#Uniform
+		i_start, i_end = i_end, i_end+n_unifor
+		params_unifor_converted = convert_sample_to_unifor(params_unifor,sample[i_start:i_end])		
+
+		#Discrete uniform
+		i_start, i_end = i_end, i_end+n_dscr_u
+		params_dscr_u_converted = convert_sample_to_unifor(params_dscr_u,sample[i_start:i_end])	
+
+		all_indices = np.concatenate([ indices_lognor,
+									   indices_normal,
+									   indices_triang,
+									   indices_unifor,
+									   indices_dscr_u  ])
+
+		all_params  = np.concatenate([ params_lognor_converted,
+									   params_normal_converted,
+									   params_triang_converted,
+									   params_unifor_converted,
+									   params_dscr_u_converted  ])
 
 		#Construct converted sample
-		np.put(converted_sample,indices_lognor,params_lognor_converted)
-		np.put(converted_sample,indices_normal,params_normal_converted)
-		np.put(converted_sample,indices_triang,params_triang_converted)
+		converted_sample = np.zeros(len(params))
+		np.put(converted_sample,all_indices,all_params)
 
 		return converted_sample
 
 
 
-	def replace_non_parameterized():
-		return amount_tech, amount bio
+	def replace_non_parameterized(self,sample):
+
+		#TODO remove repetitive params
+
+		for input_ in self.inputs:			
+
+			#1. Technosphere
+			tech_params    = self.inputs_dict[input_]['tech_params']
+			tech_n_params  = self.inputs_dict[input_]['tech_n_params']
+			tech_subsample = sample[self.i_sample : self.i_sample+tech_n_params]
+
+			self.i_sample += tech_n_params
+
+			converted_tech_params = self.convert_sample_to_proper_distribution(tech_params,tech_subsample)
+			np.put(self.amount_tech, self.inputs_dict[input_]['tech_params_where'], converted_tech_params)
+
+			#2. Biosphere
+			bio_params    = self.inputs_dict[input_]['bio_params']
+			bio_n_params  = self.inputs_dict[input_]['bio_n_params']
+			bio_subsample = sample[self.i_sample : self.i_sample+bio_n_params]
+
+			self.i_sample += bio_n_params
+
+			converted_bio_params = self.convert_sample_to_proper_distribution(bio_params,bio_subsample)
+			np.put(self.amount_bio, self.inputs_dict[input_]['bio_params_where'], converted_bio_params)
 
 
 
-	def replace_parameterized():
-		return amount_tech, amount bio
+	def replace_parameterized(self,parameters,sample):
 
+		if type(params) is NamedParameters:
+			
+
+		np.put(self.amount_tech, self.inputs_dict[input_]['tech_params_where'], converted_tech_params)
+
+		return
+		
 
 
 	def model(self,sample):
 
 		lca = self.lca
-		inputs_dict = self.inputs_dict
+		
+		self.amount_tech = lca.tech_params['amount']
+		self.amount_bio  = lca.bio_params['amount']
 
-		amount_tech = lca.tech_params['amount']
-		amount_bio  = lca.bio_params['amount']
-
-		i_sample = 0
-
-		for input_ in self.inputs:
-
-			#Technosphere
-			tech_params    = inputs_dict[input_]['tech_params']
-			tech_n_params  = inputs_dict[input_]['tech_n_params']
-			tech_subsample = sample[i_sample : i_sample+tech_n_params]
-
-			i_sample += tech_n_params
-
-			converted_tech_params = self.convert_sample_to_proper_distribution(tech_params,tech_subsample)
-			np.put(amount_tech, inputs_dict[input_]['tech_params_where'], converted_tech_params)
-
-			#Biosphere
-			bio_params    = inputs_dict[input_]['bio_params']
-			bio_n_params  = inputs_dict[input_]['bio_n_params']
-			bio_subsample = sample[i_sample : i_sample+bio_n_params]
-
-			i_sample += bio_n_params
-
-			converted_bio_params = self.convert_sample_to_proper_distribution(bio_params,bio_subsample)
-			np.put(amount_bio, inputs_dict[input_]['bio_params_where'], converted_bio_params)
+		self.i_sample = 0
+		self.replace_non_parameterized(sample)
+		self.replace_parameterized(sample)
 
 
-		lca.rebuild_technosphere_matrix(amount_tech)
-		lca.rebuild_biosphere_matrix(amount_bio)
+		lca.rebuild_technosphere_matrix(self.amount_tech)
+		lca.rebuild_biosphere_matrix(self.amount_bio)
 
 		A = lca.technosphere_matrix
 		B = lca.biosphere_matrix

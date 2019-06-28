@@ -1,6 +1,7 @@
 from math import exp, pi
 from scipy.integrate import quad
 import numpy as np
+import stats_arrays as sa
 
 ###1. MATHS
 # Calculate area under normal distribution within +-3 sigma interval from the mean.
@@ -13,9 +14,16 @@ THREE_SIGMA_Q = quad(
     3 * s,
 )[0]
 
+Q_LOW  = (1-THREE_SIGMA_Q)/2
+Q_HIGH = (1+THREE_SIGMA_Q)/2
+
 ###2. DISTRIBUTIONS
 # IDs for distributions from stats_array
-ID_NODIST = 0  # no distribution available
-ID_LOGNOR = 2  # lognormal
-ID_NORMAL = 3  # normal
-ID_TRIANG = 5  # triangular
+ID_UNDEFI = 0
+ID_NODIST = 1  # no distribution available
+ID_LOGNOR = sa.LognormalUncertainty.id  # lognormal
+ID_NORMAL = sa.NormalUncertainty.id  # normal
+ID_UNIFOR = sa.UniformUncertainty.id  # triangular
+ID_TRIANG = sa.TriangularUncertainty.id  # triangular
+ID_DSCR_U = sa.DiscreteUniform.id  # triangular
+
