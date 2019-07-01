@@ -125,6 +125,7 @@ def sobol_indices_all(Sampler, Model):
 
         total_index_temp = [(y_A[k] - y_j[k]) ** 2 for k in range(n_runs)]
         total_index[j] = sum(total_index_temp) / 2 / n_runs
+        print(total_index_temp)
 
         first_index_temp = [y_B[k] * (y_j[k] - y_A[k]) for k in range(n_runs)]
         first_index[j] = sum(first_index_temp) / n_runs
