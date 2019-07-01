@@ -30,7 +30,8 @@ lca.lcia()
 print('Initial LCA score: ' + str(lca.score))
 
 #Run GSA
-inputs = ['demand_acts','geothermal energy']
+# inputs = ['demand_acts','geothermal energy']
+inputs = []
 gsa_in_lca = GSAinLCA(lca,inputs,parameters,geothermal_conventional_model)
 
 n_dimensions = len(gsa_in_lca.parameters.data) #Number of parameters

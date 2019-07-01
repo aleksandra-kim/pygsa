@@ -271,8 +271,13 @@ class GSAinLCA:
 			#Obtain dictionary of parameterized tech_params and bio_params given the parameters_model
 			# self.obtain_parameterized_activities() #TODO decide where to put this, maybe in init is better
 
-			np.put(self.amount_tech, self.parameters_dict['tech_params_where'], self.parameters_dict['tech_params_amounts'])
-			np.put(self.amount_bio,  self.parameters_dict['bio_params_where'],  self.parameters_dict['bio_params_amounts'])
+			amount_tech = self.amount_tech
+			amount_bio  = self.amount_bio
+			np.put(amount_tech, self.parameters_dict['tech_params_where'], self.parameters_dict['tech_params_amounts'])
+			np.put(amount_bio,  self.parameters_dict['bio_params_where'],  self.parameters_dict['bio_params_amounts'])
+
+			self.amount_tech = amount_tech
+			self.amount_bio  = amount_bio
 		
 
 

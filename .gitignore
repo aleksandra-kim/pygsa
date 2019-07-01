@@ -106,3 +106,6 @@ venv.bak/
 # Apple MacOS
 .DS_Store
 pygsa/.DS_Store
+
+# Local files
+dev/parameters/cge_func.py
