@@ -1,5 +1,7 @@
 import numpy as np
 
+from .lookup_func import lookup_geothermal
+
 # Function for conventional geothermal energy
 def geothermal_conventional_model(params):
     cooling_tower_electricity = 864  # megawatt hour that we assume is the yearly electricity consumption
@@ -10,7 +12,7 @@ def geothermal_conventional_model(params):
                                      (1 - params["auxiliary_power"]) *
                                       params["lifetime"] * 8760000) -
                                      (cooling_tower_electricity * 1000 * cooling_tower_number * 30))  # kilowatt hour
-    number_of_wells.           = (np.ceil(params["installed_capacity"] / 
+    number_of_wells            = (np.ceil(params["installed_capacity"] / 
                                   params["gross_power_per_well"])) # Total number of wells is rounded up
     total_metres_drilled       = (number_of_wells *
                                   params["average_depth_of_wells"]) # metres

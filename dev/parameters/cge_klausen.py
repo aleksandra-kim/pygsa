@@ -72,5 +72,5 @@ parameters = {
         }
 }
 
-params = klausen.NamedParameters(parameters)
+parameters = klausen.NamedParameters(parameters)
 

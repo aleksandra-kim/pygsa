@@ -1,7 +1,5 @@
-#TODO ask people what should vary in foreground and background, wrt databases
-
-
 import numpy as np
+import pandas as pd
 from pypardiso import spsolve
 from pygsa.sampling.convert_distributions import *
 from klausen.named_parameters import NamedParameters
@@ -15,9 +13,9 @@ class GSAinLCA:
 	Perform GSA in LCA
 	"""
 
-	def __init__(self,lca,inputs,options=None):
+	def __init__(self,lca,inputs,parameters=None,parameters_model=None,options=None):
 
-		self.inputs = inputs
+		self.inputs, self.parameters, self.parameters_model = inputs, parameters, parameters_model
 
 		#Extract databases names, TODO implement smth simpler 
 		db = set()
@@ -33,6 +31,10 @@ class GSAinLCA:
 		#Generate inputs dictionary
 		self.split_inputs()
 
+		if self.parameters != None:
+			#Generate parameters dictionary
+			self.obtain_parameterized_activities()
+
 
 
 	def split_inputs(self):
@@ -40,9 +42,6 @@ class GSAinLCA:
 
 		lca = self.lca
 		inputs = self.inputs
-
-		dtype_tech = lca.tech_params.dtype
-		dtype_bio  = lca.bio_params.dtype
 
 		inputs_dict = {} #only store inputs with uncertainty
 
@@ -69,6 +68,7 @@ class GSAinLCA:
 						indices_bio = np.concatenate([indices_bio,np.where(mask_bio)[0]])
 				indices_tech = np.sort(indices_tech)
 				indices_bio = np.sort(indices_bio)
+				print(indices_tech)
 
 			elif input_ in self.db:
 				#select all products that are linked to the given database
@@ -104,6 +104,7 @@ class GSAinLCA:
 	def convert_sample_to_proper_distribution(self,params,sample):
 		#params should have uncertainty information in the same format as stats_array
 
+		#Make sure that sample length is the same as the number of parameters #TODO change for group sampling
 		assert len(params) == len(sample)
 
 		#Info on distributions
@@ -186,14 +187,92 @@ class GSAinLCA:
 
 
 
-	def replace_parameterized(self,parameters,sample):
+	def convert_named_parameters_to_array(self):
 
-		if type(params) is NamedParameters:
-			
+		dtype_parameters = np.dtype([ ('name', '<U40'), #TODO change hardcoded 40 here
+  									  ('uncertainty_type', 'u1'), 
+  									  ('amount', '<f4'),
+									  ('loc', '<f4'), 
+									  ('scale', '<f4'), 
+									  ('shape', '<f4'), 
+									  ('minimum', '<f4'), 
+									  ('maximum', '<f4')  ])
 
-		np.put(self.amount_tech, self.inputs_dict[input_]['tech_params_where'], converted_tech_params)
+		parameters_array = np.empty(len(self.parameters),dtype_parameters)
+		parameters_array[:] = np.nan
 
-		return
+		for i,name in enumerate(self.parameters):
+			parameters_array[i]['name'] = name
+			for k,v in self.parameters.data[name].items():
+				#to avoid confusion when parameters amounts were generated before, disregard amounts completely
+				if not k == 'amount':
+					parameters_array[i][k] = v
+
+		self.parameters_array = parameters_array
+
+
+
+	def obtain_parameterized_activities(self):
+
+		lca = self.lca
+
+		self.parameters.static() #need to run because this is how klausen works
+		activities = self.parameters_model(self.parameters)
+
+		ind_row = 0
+		ind_col = 1
+		ind_amt = 2
+
+		acts_tech    = [act for act in activities if act[ind_row] in lca.activity_dict]
+		mask_tech    = lambda i,j : np.where( np.all([lca.tech_params['row']==i, lca.tech_params['col']==j], axis=0) )
+		indices_tech = np.hstack([ mask_tech( lca.activity_dict[act[ind_row]],lca.activity_dict[act[ind_col]] ) \
+										  for act in acts_tech]) [0]
+
+		acts_bio    = [act for act in activities if act[ind_row] in lca.biosphere_dict]
+		mask_bio    = lambda i,j : np.where( np.all([lca.bio_params['row']==i, lca.bio_params['col']==j], axis=0) )
+		indices_bio = np.hstack([ mask_bio( lca.biosphere_dict[act[ind_row]],lca.activity_dict[act[ind_col]] ) \
+								  for act in acts_bio]) [0]
+
+		parameters_dict = {}
+
+		parameters_dict['tech_params_where']   = indices_tech
+		parameters_dict['tech_params_amounts'] = np.array([ act[ind_amt] for act in acts_tech ])
+		parameters_dict['tech_n_params'] = len(indices_tech)
+
+		parameters_dict['bio_params_where']    = indices_bio
+		parameters_dict['bio_params_amounts']  = np.array([ act[ind_amt] for act in acts_bio ])
+		parameters_dict['bio_n_params'] = len(indices_bio)
+
+		#TODO remove this check later on maybe
+		assert indices_tech.shape[0] == parameters_dict['tech_n_params']
+		assert indices_bio.shape[0]  == parameters_dict['bio_n_params']
+
+		self.parameters_dict = parameters_dict
+
+
+
+	def replace_parameterized(self,sample):
+
+		if type(self.parameters) is NamedParameters:
+
+			self.convert_named_parameters_to_array()
+
+			parameters_subsample = sample[self.i_sample : self.i_sample+len(self.parameters_array)]
+			self.i_sample += len(self.parameters_array)
+
+			#Convert uniform [0,1] sample to proper parameters distributions
+			converted_parameters = self.convert_sample_to_proper_distribution(self.parameters_array,parameters_subsample)
+
+			#Put converted values to parameters class, order of converted_parameters is the same as in parameters_array
+			for i in range(len(self.parameters_array)):
+				name = self.parameters_array[i]['name']
+				self.parameters.data[name]['amount'] = converted_parameters[i]
+
+			#Obtain dictionary of parameterized tech_params and bio_params given the parameters_model
+			# self.obtain_parameterized_activities() #TODO decide where to put this, maybe in init is better
+
+			np.put(self.amount_tech, self.parameters_dict['tech_params_where'], self.parameters_dict['tech_params_amounts'])
+			np.put(self.amount_bio,  self.parameters_dict['bio_params_where'],  self.parameters_dict['bio_params_amounts'])
 		
 
 
@@ -208,22 +287,11 @@ class GSAinLCA:
 		self.replace_non_parameterized(sample)
 		self.replace_parameterized(sample)
 
-
 		lca.rebuild_technosphere_matrix(self.amount_tech)
 		lca.rebuild_biosphere_matrix(self.amount_bio)
 
-		A = lca.technosphere_matrix
-		B = lca.biosphere_matrix
-		c = sum(lca.characterization_matrix)
-		d = lca.demand_array
-
-		score = (c*B)*spsolve(A,d) #run it before MC to factorize matrix A
-
-		return score
-
-
-
-
+		return (sum(lca.characterization_matrix)*lca.biosphere_matrix) * \
+				spsolve(lca.technosphere_matrix,lca.demand_array)
 
 
 
