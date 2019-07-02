@@ -68,7 +68,6 @@ class GSAinLCA:
 						indices_bio = np.concatenate([indices_bio,np.where(mask_bio)[0]])
 				indices_tech = np.sort(indices_tech)
 				indices_bio = np.sort(indices_bio)
-				print(indices_tech)
 
 			elif input_ in self.db:
 				#select all products that are linked to the given database
@@ -205,8 +204,7 @@ class GSAinLCA:
 			parameters_array[i]['name'] = name
 			for k,v in self.parameters.data[name].items():
 				#to avoid confusion when parameters amounts were generated before, disregard amounts completely
-				if not k == 'amount':
-					parameters_array[i][k] = v
+				parameters_array[i][k] = v
 
 		self.parameters_array = parameters_array
 
@@ -235,12 +233,16 @@ class GSAinLCA:
 
 		parameters_dict = {}
 
+		parameters_dict['ind_row'] = ind_row
+		parameters_dict['ind_col'] = ind_col
+		parameters_dict['ind_amt'] = ind_amt
+
 		parameters_dict['tech_params_where']   = indices_tech
 		parameters_dict['tech_params_amounts'] = np.array([ act[ind_amt] for act in acts_tech ])
 		parameters_dict['tech_n_params'] = len(indices_tech)
 
-		parameters_dict['bio_params_where']    = indices_bio
-		parameters_dict['bio_params_amounts']  = np.array([ act[ind_amt] for act in acts_bio ])
+		parameters_dict['bio_params_where']   = indices_bio
+		parameters_dict['bio_params_amounts'] = np.array([ act[ind_amt] for act in acts_bio ])
 		parameters_dict['bio_n_params'] = len(indices_bio)
 
 		#TODO remove this check later on maybe
@@ -248,6 +250,22 @@ class GSAinLCA:
 		assert indices_bio.shape[0]  == parameters_dict['bio_n_params']
 
 		self.parameters_dict = parameters_dict
+
+
+
+	def update_parameterized_activities(self):
+
+		activities = self.parameters_model(self.parameters)
+
+		ind_row = self.parameters_dict['ind_row']
+		ind_amt = self.parameters_dict['ind_amt']
+
+		acts_tech = [act for act in activities if act[ind_row] in self.lca.activity_dict]
+		acts_bio  = [act for act in activities if act[ind_row] in self.lca.biosphere_dict]
+
+		self.parameters_dict['tech_params_amounts'] = np.array([ act[ind_amt] for act in acts_tech ])
+		self.parameters_dict['bio_params_amounts']  = np.array([ act[ind_amt] for act in acts_bio ])
+
 
 
 
@@ -267,17 +285,11 @@ class GSAinLCA:
 			for i in range(len(self.parameters_array)):
 				name = self.parameters_array[i]['name']
 				self.parameters.data[name]['amount'] = converted_parameters[i]
-
 			#Obtain dictionary of parameterized tech_params and bio_params given the parameters_model
-			# self.obtain_parameterized_activities() #TODO decide where to put this, maybe in init is better
+			self.update_parameterized_activities()
 
-			amount_tech = self.amount_tech
-			amount_bio  = self.amount_bio
-			np.put(amount_tech, self.parameters_dict['tech_params_where'], self.parameters_dict['tech_params_amounts'])
-			np.put(amount_bio,  self.parameters_dict['bio_params_where'],  self.parameters_dict['bio_params_amounts'])
-
-			self.amount_tech = amount_tech
-			self.amount_bio  = amount_bio
+			np.put(self.amount_tech, self.parameters_dict['tech_params_where'], self.parameters_dict['tech_params_amounts'])
+			np.put(self.amount_bio,  self.parameters_dict['bio_params_where'],  self.parameters_dict['bio_params_amounts'])
 		
 
 
@@ -295,8 +307,10 @@ class GSAinLCA:
 		lca.rebuild_technosphere_matrix(self.amount_tech)
 		lca.rebuild_biosphere_matrix(self.amount_bio)
 
-		return (sum(lca.characterization_matrix)*lca.biosphere_matrix) * \
+		score = (sum(lca.characterization_matrix)*lca.biosphere_matrix) * \
 				spsolve(lca.technosphere_matrix,lca.demand_array)
+
+		return score
 
 
 
