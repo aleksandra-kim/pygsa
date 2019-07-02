@@ -35,6 +35,8 @@ def lookup_geothermal():
            wells_closr,  \
            coll_pipe,    \
            plant,        \
+           ORC_fluid,    \
+           ORC_fluid_wst,\
            diesel_stim,  \
            co2,          \
            electricity_prod_conventional, \

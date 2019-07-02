@@ -1,16 +1,21 @@
+# Set working directory
+# Note that because pygsa is not installed, we set pygsa as working directory and add dev. for scripts in dev folder.
+import os
+os.chdir(r'C:\Users\andre\Documents\Github\pygsa')
+
 import brightway2 as bw
-from gsa_lca import *
+from dev.gsa_lca import *
 from pygsa.saindices.sobol_indices import sobol_indices
 
 #Local files
-from parameters.cge_func import geothermal_conventional_model
-from parameters.cge_klausen import parameters
-from parameters.lookup_func import *
+#from parameters.cge_func import geothermal_conventional_model - IMPORT MODEL MANUALLY
+from dev.parameters.cge_klausen import parameters
+from dev.parameters.lookup_func import *
 
 #Set current project
 bw.projects.set_current('Geothermal')
 
-from parameters.replace import *
+#from parameters.replace import * - no need for this atm
 
 #Choose demand
 _, _, _, _, _, _, _, _, _, _, _, _, _, _, electricity_prod_conv, _ = lookup_geothermal()
@@ -40,6 +45,7 @@ print( '# of parameters: ' + str(len(gsa_in_lca.parameters.data)))
 print( 'parameterized activities: ' +
 	   '# of tech and bio params -> ' 
 		+ str([ gsa_in_lca.parameters_dict['tech_n_params'], gsa_in_lca.parameters_dict['bio_n_params'] ]) )
+
 for input_ in inputs:
 	print( input_ + ': ' +
 		   '# of tech and bio params -> ' 
@@ -61,6 +67,9 @@ def sobol_pandas(gsa_in_lca,first,total):
 	sum_total = np.sum(total)
 	normalized_first = np.array([ first[i]/sum_first for i in range(len(first)) ])
 	normalized_total = np.array([ total[i]/sum_total for i in range(len(total)) ])
+    
+    print(sum_first)
+    print(sum_total)
 
 	# get_act_prod_bio = lambda ind_reverse, p:
 	activities, products_flows = [], []
