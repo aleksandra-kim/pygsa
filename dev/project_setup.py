@@ -113,6 +113,8 @@ first, total = sobol_indices(n_runs, n_dimensions, gsa_in_lca.model, Sampler=Non
 sobol_pandas(gsa_in_lca,first,total)
 
 
+gsa_in_lca.sobol_df.to_excel('sobol.xlsx')
+
 
 
 
