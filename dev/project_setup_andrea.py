@@ -68,9 +68,6 @@ def sobol_pandas(gsa_in_lca,first,total):
 	normalized_first = np.array([ first[i]/sum_first for i in range(len(first)) ])
 	normalized_total = np.array([ total[i]/sum_total for i in range(len(total)) ])
     
-    print(sum_first)
-    print(sum_total)
-
 	# get_act_prod_bio = lambda ind_reverse, p:
 	activities, products_flows = [], []
 	for input_ in gsa_in_lca.inputs:
