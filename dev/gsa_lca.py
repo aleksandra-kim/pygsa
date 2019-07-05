@@ -1,12 +1,15 @@
 import numpy as np
 import pandas as pd
+from stats_arrays import LognormalUncertainty, NormalUncertainty, \
+    DiscreteUniform, UniformUncertainty, TriangularUncertainty, \
+    UncertaintyBase, uncertainty_choices
 from pypardiso import spsolve
 from pygsa.sampling.convert_distributions import *
 from klausen.named_parameters import NamedParameters
 
-#Local files
-from pygsa.constants import *
 
+#TODO for non_parameterized activities: need to check that order of activities, 
+#order of conversion from sampling and order when constructing database is the same.
 
 class GSAinLCA:
     """
@@ -30,16 +33,25 @@ class GSAinLCA:
 
         #Generate inputs dictionary
         self.split_inputs()
-
+        
         if self.parameters != None:
+            if type(self.parameters) is not NamedParameters:
+                
+                #Initiate NamedParameters object
+                self.parameters=NamedParameters(self.parameters)
+                
+            self.parameters.static()  
+            
             #Generate parameters dictionary
             self.obtain_parameterized_activities()
-
-
+            
+        
+        
 
     def split_inputs(self):
+        
         #Split information of each input group
-
+        
         lca = self.lca
         inputs = self.inputs
 
@@ -68,7 +80,8 @@ class GSAinLCA:
                         indices_bio = np.concatenate([indices_bio,np.where(mask_bio)[0]])
                 indices_tech = np.sort(indices_tech)
                 indices_bio = np.sort(indices_bio)
-
+            
+            #TODO we need not consider activities in db that are not being used
             elif input_ in self.db:
                 #select all products that are linked to the given database
                 #indices corresponding to the given database in the activity dictionary
@@ -101,66 +114,45 @@ class GSAinLCA:
 
 
     def convert_sample_to_proper_distribution(self,params,sample):
-        #params should have uncertainty information in the same format as stats_array
-
+              
         #Make sure that sample length is the same as the number of parameters #TODO change for group sampling
         assert len(params) == len(sample)
-
-        #Info on distributions
-        indices_lognor, params_lognor = get_distr_indices_params(params,ID_LOGNOR)
-        indices_normal, params_normal = get_distr_indices_params(params,ID_NORMAL)
-        indices_triang, params_triang = get_distr_indices_params(params,ID_TRIANG)
-        indices_unifor, params_unifor = get_distr_indices_params(params,ID_UNIFOR)
-        indices_dscr_u, params_dscr_u = get_distr_indices_params(params,ID_DSCR_U)
-        n_lognor = len(params_lognor)
-        n_normal = len(params_normal)
-        n_triang = len(params_triang)
-        n_unifor = len(params_unifor)
-        n_dscr_u = len(params_dscr_u)
-
-        #Lognormal
-        i_start, i_end = 0, n_lognor
-        params_lognor_converted = convert_sample_to_lognor(params_lognor,sample[i_start:i_end])
-
-        #Normal
-        i_start, i_end = i_end, i_end+n_normal
-        params_normal_converted = convert_sample_to_normal(params_normal,sample[i_start:i_end])
-
-        #Triangular
-        i_start, i_end = i_end, i_end+n_triang
-        params_triang_converted = convert_sample_to_triang(params_triang,sample[i_start:i_end])        
-
-        #Uniform
-        i_start, i_end = i_end, i_end+n_unifor
-        params_unifor_converted = convert_sample_to_unifor(params_unifor,sample[i_start:i_end])        
-
-        #Discrete uniform
-        i_start, i_end = i_end, i_end+n_dscr_u
-        params_dscr_u_converted = convert_sample_to_unifor(params_dscr_u,sample[i_start:i_end])    
-
-        all_indices = np.concatenate([ indices_lognor,
-                                       indices_normal,
-                                       indices_triang,
-                                       indices_unifor,
-                                       indices_dscr_u  ])
-
-        all_params  = np.concatenate([ params_lognor_converted,
-                                       params_normal_converted,
-                                       params_triang_converted,
-                                       params_unifor_converted,
-                                       params_dscr_u_converted  ])
-
-        #Construct converted sample
+        
+        # TODO When all distributions in stats_arrays are implemented, use:
+        # uncertainties_dict = dict([(choices, params[u'uncertainty_type'] == choices.id) for choices in uncertainty_choices if any(params[u'uncertainty_type'] == choices.id)])
+        
+        # For now, we only include some uncertainty types
+        uncertainty_types = LognormalUncertainty, NormalUncertainty, TriangularUncertainty, \
+            UniformUncertainty, DiscreteUniform
+        uncertainties_dict = dict([(types, params[u'uncertainty_type'] == types.id) for types in uncertainty_types if any(params[u'uncertainty_type'] == types.id)])
+        
         converted_sample = np.zeros(len(params))
-        np.put(converted_sample,all_indices,all_params)
-
+        
+        # TODO is there a quicker and more elegant way to do this?
+        for key in uncertainties_dict :
+            if key ==  LognormalUncertainty:
+                mask = uncertainties_dict[key]
+                converted_sample[mask] = convert_sample_to_lognor(params[mask], sample[mask]).flatten()
+            if key ==  NormalUncertainty:
+                mask = uncertainties_dict[key]
+                converted_sample[mask] = convert_sample_to_normal(params[mask], sample[mask]).flatten()
+            if key ==  TriangularUncertainty:
+                mask = uncertainties_dict[key]
+                converted_sample[mask] = convert_sample_to_triang(params[mask], sample[mask]).flatten()
+            if key ==  UniformUncertainty:
+                mask = uncertainties_dict[key]
+                converted_sample[mask] = convert_sample_to_unifor(params[mask], sample[mask]).flatten()
+            if key ==  DiscreteUniform:
+                mask = uncertainties_dict[key]
+                converted_sample[mask]  = convert_sample_to_dscr_u(params[mask], sample[mask]).flatten()
+                
         return converted_sample
 
 
 
     def replace_non_parameterized(self,sample):
 
-        #TODO remove repetitive params
+        #TODO is ther or
 
         for input_ in self.inputs:            
 
@@ -187,25 +179,11 @@ class GSAinLCA:
 
 
     def convert_named_parameters_to_array(self):
-
-        dtype_parameters = np.dtype([ ('name', '<U40'), #TODO change hardcoded 40 here
-                                        ('uncertainty_type', 'u1'), 
-                                        ('amount', '<f4'),
-                                      ('loc', '<f4'), 
-                                      ('scale', '<f4'), 
-                                      ('shape', '<f4'), 
-                                      ('minimum', '<f4'), 
-                                      ('maximum', '<f4')  ])
-
-        parameters_array = np.empty(len(self.parameters),dtype_parameters)
-        parameters_array[:] = np.nan
-
-        for i,name in enumerate(self.parameters):
-            parameters_array[i]['name'] = name
-            for k,v in self.parameters.data[name].items():
-                #to avoid confusion when parameters amounts were generated before, disregard amounts completely
-                parameters_array[i][k] = v
-
+             
+        parameters_keys = sorted([key for key in self.parameters])
+        parameters_array = UncertaintyBase.from_dicts(*[self.parameters.data[key] for key in parameters_keys])
+        
+        self.parameters_keys = parameters_keys
         self.parameters_array = parameters_array
 
 
@@ -214,7 +192,6 @@ class GSAinLCA:
 
         lca = self.lca
 
-        self.parameters.static() #need to run because this is how klausen works
         activities = self.parameters_model(self.parameters)
 
         ind_row = 0
@@ -270,32 +247,30 @@ class GSAinLCA:
 
 
     def replace_parameterized(self,sample):
+        
+        self.convert_named_parameters_to_array()
 
-        if type(self.parameters) is NamedParameters:
+        parameters_subsample = sample[self.i_sample : self.i_sample+len(self.parameters_array)]
+        self.i_sample += len(self.parameters_array)
 
-            self.convert_named_parameters_to_array()
+        #Convert uniform [0,1] sample to proper parameters distributions
+        converted_parameters = self.convert_sample_to_proper_distribution(self.parameters_array,parameters_subsample)
+        
+        #Make dictionary of new_parameters to replicate output of klausen 
+        new_parameters = {}
+   
+        #Put converted values to parameters class, order of converted_parameters is the same as in parameters_array
+        for i in range(len(self.parameters_array)):
+                 
+            name = self.parameters_keys[i]
+            new_parameters[name] = converted_parameters[i]
+            self.new_parameters = new_parameters
+                 
+        #Obtain dictionary of parameterized tech_params and bio_params given the parameters_model
+        self.update_parameterized_activities()
 
-            parameters_subsample = sample[self.i_sample : self.i_sample+len(self.parameters_array)]
-            self.i_sample += len(self.parameters_array)
-
-            #Convert uniform [0,1] sample to proper parameters distributions
-            converted_parameters = self.convert_sample_to_proper_distribution(self.parameters_array,parameters_subsample)
-            
-            #Make dictionary of new_parameters to replicate output of klausen 
-            new_parameters = {}
-       
-            #Put converted values to parameters class, order of converted_parameters is the same as in parameters_array
-            for i in range(len(self.parameters_array)):
-                     
-                name = self.parameters_array[i]['name']
-                new_parameters[name] = converted_parameters[i]
-                self.new_parameters = new_parameters
-                
-            #Obtain dictionary of parameterized tech_params and bio_params given the parameters_model
-            self.update_parameterized_activities()
-
-            np.put(self.amount_tech, self.parameters_dict['tech_params_where'], self.parameters_dict['tech_params_amounts'])
-            np.put(self.amount_bio,  self.parameters_dict['bio_params_where'],  self.parameters_dict['bio_params_amounts'])
+        np.put(self.amount_tech, self.parameters_dict['tech_params_where'], self.parameters_dict['tech_params_amounts'])
+        np.put(self.amount_bio,  self.parameters_dict['bio_params_where'],  self.parameters_dict['bio_params_amounts'])
         
 
 

@@ -109,3 +109,4 @@ pygsa/.DS_Store
 
 # Local files
 dev/parameters/cge_func.py
+dev/parameters/conventional_model.py
