@@ -4,21 +4,19 @@ import os
 os.chdir(r'C:\Users\andre\Documents\Github\pygsa')
 
 import brightway2 as bw
-import numpy as np
-import pandas as pd
 from dev.gsa_lca import GSAinLCA
 from pygsa.saindices.sobol_indices import sobol_indices
 
 #Local files
-from dev.parameters.lookup_func import *
+from dev.parameters.lookup_func import lookup_geothermal
 from dev.parameters.cge_klausen import parameters
 from dev.sobol_pandas import sobol_pandas
 
 # Need to set current project before importing the model
 bw.projects.set_current('Geothermal')
 
-# Not on GitHub
-from dev.parameters.conventional_model import *
+# On GitIgnore
+from dev.parameters.cge_model import *
 
 #Choose demand
 _, _, _, _, _, _, _, _, _, _, _, _, _, _, electricity_prod_conv, _ = lookup_geothermal()
@@ -29,7 +27,7 @@ ILCD_CC = [method for method in bw.methods if "ILCD 2.0 2018 midpoint no LT" in 
 ILCD_HH = [method for method in bw.methods if "ILCD 2.0 2018 midpoint no LT" in str(method) and "human health" in str(method)]
 ILCD_EQ = [method for method in bw.methods if "ILCD 2.0 2018 midpoint no LT" in str(method) and "ecosystem quality" in str(method)]
 ILCD = ILCD_CC + ILCD_HH + ILCD_EQ
-method = ILCD[1]
+method = ILCD[0]
 
 #Run LCIA
 lca = bw.LCA(demand,method)
@@ -38,7 +36,7 @@ lca.lcia()
 print('Initial LCA score: ' + str(lca.score))
 
 #Run GSA
-#inputs = ['geothermal energy']
+#inputs = ['demand_acts']
 inputs = []
 gsa_in_lca = GSAinLCA(lca,inputs,parameters,geothermal_conventional_model)
 
@@ -68,7 +66,7 @@ first, total = sobol_indices(n_runs, n_dimensions, gsa_in_lca.model, Sampler=Non
 sobol_pandas(gsa_in_lca,first,total)
 
 #Export to excel
-#gsa_in_lca.sobol_df.to_excel('sobol.xlsx')
+gsa_in_lca.sobol_df.to_excel('dev\sobol.xlsx')
 
 
 

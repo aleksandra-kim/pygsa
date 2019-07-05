@@ -41,8 +41,3 @@ def lookup_geothermal():
            co2,          \
            electricity_prod_conventional, \
            electricity_prod_enhanced
-
-
-"""
-S: does search always return activities in the same order?
-"""

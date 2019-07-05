@@ -70,6 +70,7 @@ class GSAinLCA:
 
             elif input_ == 'demand_acts':
                 #select all products that pertain to activities in the given demand
+                # TODO these are being initialized two times.
                 indices_tech = np.array([],dtype=int)
                 indices_bio  = np.array([],dtype=int)
                 for act_index in np.nonzero(lca.demand_array)[0]:
@@ -152,8 +153,6 @@ class GSAinLCA:
 
     def replace_non_parameterized(self,sample):
 
-        #TODO is ther or
-
         for input_ in self.inputs:            
 
             #1. Technosphere
@@ -180,10 +179,10 @@ class GSAinLCA:
 
     def convert_named_parameters_to_array(self):
              
-        parameters_keys = sorted([key for key in self.parameters])
-        parameters_array = UncertaintyBase.from_dicts(*[self.parameters.data[key] for key in parameters_keys])
+        parameters_names = sorted([key for key in self.parameters])
+        parameters_array = UncertaintyBase.from_dicts(*[self.parameters.data[key] for key in parameters_names])
         
-        self.parameters_keys = parameters_keys
+        self.parameters_names = parameters_names
         self.parameters_array = parameters_array
 
 
@@ -262,7 +261,7 @@ class GSAinLCA:
         #Put converted values to parameters class, order of converted_parameters is the same as in parameters_array
         for i in range(len(self.parameters_array)):
                  
-            name = self.parameters_keys[i]
+            name = self.parameters_names[i]
             new_parameters[name] = converted_parameters[i]
             self.new_parameters = new_parameters
                  

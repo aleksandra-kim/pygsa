@@ -47,8 +47,8 @@ def sobol_pandas(gsa_in_lca,first,total):
 		activities     += act_tech + act_bio
 		products_flows += products + bio_flows
 		
-	data = { 'Products or flows': products_flows + sorted(list(gsa_in_lca.parameters)),
-			 'Activities': activities + sorted(list(gsa_in_lca.parameters)),
+	data = { 'Products or flows': products_flows + gsa_in_lca.parameters_names,
+			 'Activities': activities +  gsa_in_lca.parameters_names,
 			 'First': first, 
 			 'Total': total, 
 			 'Normalized first': normalized_first,
