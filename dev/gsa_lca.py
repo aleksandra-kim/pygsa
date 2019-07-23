@@ -98,7 +98,6 @@ class GSAinLCA:
 		  input_3: {...},
 		  ...
 		}
-
 		"""
 
 		lca    = self.lca
