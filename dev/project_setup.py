@@ -2,15 +2,16 @@ import brightway2 as bw
 from gsa_lca import *
 from pygsa.saindices.sobol_indices import sobol_indices
 
-#Local files
-from parameters.cge_func import geothermal_conventional_model
-from parameters.cge_klausen import parameters
-from parameters.lookup_func import *
-
 #Set current project
 bw.projects.set_current('Geothermal')
 
-from parameters.replace import *
+#Local files
+from parameters.cge_model import GeothermalConventionalModel
+from parameters.cge_klausen import parameters
+from parameters.lookup_func import lookup_geothermal
+
+#Set up project parameters, model, etc
+gt_model = GeothermalConventionalModel()
 
 #Choose demand
 _, _, _, _, _, _, _, _, _, _, _, _, _, _, electricity_prod_conv, _ = lookup_geothermal()
@@ -25,14 +26,11 @@ method = ILCD[0]
 
 #Run LCIA
 lca = bw.LCA(demand,method)
-lca.lci()
-lca.lcia()
-print('Initial LCA score: ' + str(lca.score))
 
 #Run GSA
-# inputs = ['demand_acts','geothermal energy']
-inputs = []
-gsa_in_lca = GSAinLCA(lca,inputs,parameters,geothermal_conventional_model)
+inputs = ['geothermal energy']
+# inputs = []
+gsa_in_lca = GSAinLCA(lca,inputs,parameters,gt_model)
 
 n_dimensions = len(gsa_in_lca.parameters.data) #Number of parameters
 print( '# of parameters: ' + str(len(gsa_in_lca.parameters.data)))
@@ -92,9 +90,11 @@ def sobol_pandas(gsa_in_lca,first,total):
 
 		activities     += act_tech + act_bio
 		products_flows += products + bio_flows
+
+	parameters_list = gsa_in_lca.parameters_array['name'].tolist()
 		
-	data = { 'Products or flows': products_flows + list(gsa_in_lca.parameters),
-			 'Activities': activities + list(gsa_in_lca.parameters),
+	data = { 'Products or flows': products_flows + parameters_list,
+			 'Activities': activities + parameters_list,
 			 'First': first, 
 			 'Total': total, 
 			 'Normalized first': normalized_first,

@@ -27,11 +27,11 @@ parameters = {
                 "uncertainty_type": sa.UniformUncertainty.id
         },
         "co2_emissions": {
-                "minimum": 0.004,
-                "maximum": 0.740,
+                "minimum": 100.004,
+                "maximum": 100.740,
                 "uncertainty_type": sa.LognormalUncertainty.id,
-                "loc": np.log(0.07718487920206497),
-                "scale": 0.985026884879192
+                "loc": np.log(100.07718487920206497),
+                "scale": 100.985026884879192
         },
         "lifetime": {
                 "minimum": 20,
