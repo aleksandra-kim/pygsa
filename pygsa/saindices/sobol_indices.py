@@ -8,7 +8,7 @@ def sobol_indices_one(Sampler, Model):
     """
     Run Monte Carlo simulations and compute Sobol indices while generating samples one at a time.
 
-    Parameters
+    Attributes
     ----------
     Sampler : class
         Class that generates one sample of size n_dimension at a time using method __next__ or
@@ -73,7 +73,7 @@ def sobol_indices_all(Sampler, Model):
     """
     Run Monte Carlo simulations and compute Sobol indices while generating all samples at the same time.
 
-    Parameters
+    Attributes
     ----------
     Sampler : class
         Class that generates one sample of size n_dimension at a time using method __next__ or
@@ -137,7 +137,7 @@ def sobol_indices(n_runs, n_dimensions, Model, Sampler=None):
     Wrapper function that chooses how to calculate Sobol indices depending on the problem.
     #For now, if problem has <1000 dimensions, generate all samples simultaneously. Otherwise, one sample at a time.
 
-    Parameters
+    Attributes
     ----------
     n_runs : int
         Number of Monte Carlo runs

@@ -108,5 +108,10 @@ venv.bak/
 pygsa/.DS_Store
 
 # Local files
-dev/parameters/cge_klausen.py
+dev/parameters/cge_func.py
+dev/sobol.xlsx
 dev/parameters/cge_model.py
+dev/parameters/cge_model.py
+dev/parameters/cge_klausen.py
+dev/old
+dev/data

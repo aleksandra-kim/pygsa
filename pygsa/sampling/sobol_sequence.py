@@ -75,7 +75,7 @@ class SobolSample:
         """
         Generate index of the least significant zero bit of a value.
 
-        Parameters
+        Attributes
         ----------
         Value : int
 
