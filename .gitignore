@@ -110,6 +110,7 @@ pygsa/.DS_Store
 # Local files
 dev/parameters/cge_func.py
 dev/sobol.xlsx
+dev/sa_indices.xlsx
 dev/parameters/cge_model.py
 dev/parameters/cge_model.py
 dev/parameters/cge_klausen.py
