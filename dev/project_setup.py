@@ -60,15 +60,15 @@ problem = {
 
 # 1. Sobol indices
 t0 = time.time()
-X = saltelli.sample(problem, N, calc_second_order=calc_second_order)
+X  = saltelli.sample(problem, N, calc_second_order=calc_second_order)
 t1 = time.time()
 print(str(t1-t0) + ' sec for Sobol sampling')
 
 t0 = time.time()
-Y = np.zeros(X.shape[0])
+Y  = np.zeros(X.shape[0])
 for i in range(X.shape[0]):
   sample = X[i,:]
-  Y[i] = gsa_in_lca.model(sample)
+  Y[i]   = gsa_in_lca.model(sample)
 t1 = time.time()
 print(str(t1-t0) + ' sec for running the LCA model with Sobol sampling')
 
@@ -85,28 +85,28 @@ gsa_in_lca.sensitivity_indices_df.to_excel('sa_indices.xlsx')
 
 
 
-# 2. FAST - minimum number of runs is 70 so far, at 70 runs very slowly!
-N = 70
+# # 2. FAST - minimum number of runs is 70 so far, at 70 runs very slowly!
+# N = 70
 
-t0 = time.time()
-X = fast_sampler.sample(problem, N)
-t1 = time.time()
-print(str(t1-t0) + ' sec for FAST sampling')
+# t0 = time.time()
+# X = fast_sampler.sample(problem, N)
+# t1 = time.time()
+# print(str(t1-t0) + ' sec for FAST sampling')
 
-Y = np.zeros(X.shape[0])
-for i in range(X.shape[0]):
-  sample = X[i,:]
-  Y[i] = gsa_in_lca.model(sample)
+# Y = np.zeros(X.shape[0])
+# for i in range(X.shape[0]):
+#   sample = X[i,:]
+#   Y[i] = gsa_in_lca.model(sample)
 
-t0 = time.time()
-sa_fast = fast.analyze(problem, Y, print_to_console=False)
-t1 = time.time()
-print(str(t1-t0) + ' sec for FAST analyze')
+# t0 = time.time()
+# sa_fast = fast.analyze(problem, Y, print_to_console=False)
+# t1 = time.time()
+# print(str(t1-t0) + ' sec for FAST analyze')
 
-gsa_in_lca.sa_pandas_append(sa_fast)
+# gsa_in_lca.sa_pandas_append(sa_fast)
 
 
-gsa_in_lca.sensitivity_indices_df.to_excel('sa_indices.xlsx')
+# gsa_in_lca.sensitivity_indices_df.to_excel('sa_indices.xlsx')
 
 
 
