@@ -31,7 +31,7 @@ method = ILCD[0]
 lca = bw.LCA(demand,method)
 
 # Run GSA
-inputs = ['geothermal energy']
+inputs = []
 gsa_in_lca = GSAinLCA(lca,inputs,parameters,gt_model)
 
 # Activities in the gsa_in_lca.inputs_dict
@@ -50,7 +50,7 @@ print( 'parameterized activities: ' +
         + str([ gsa_in_lca.parameters_dict['tech_n_params'], gsa_in_lca.parameters_dict['bio_n_params'] ]) )
 
 # SALib implementation 
-N = 4
+N = 500
 calc_second_order = False
 problem = {
   'num_vars': n_dimensions,
@@ -78,7 +78,8 @@ t1 = time.time()
 print(str(t1-t0) + ' sec for Sobol analyze')
 
 gsa_in_lca.sa_pandas_append(sa_sobol)
-gsa_in_lca.sensitivity_indices_df.to_excel('sa_indices.xlsx')
+name= "sa_indices_N" + str(N) + ".xlsx"
+gsa_in_lca.sensitivity_indices_df.to_excel(name)
 
 
 
