@@ -120,6 +120,9 @@ class GSAinLCA:
 
         for input_ in inputs:
 
+            if input_ == 'biosphere':
+                continue
+
             inputs_dict[input_] = {}
 
             indices_tech = np.array([], dtype=int)
@@ -242,7 +245,10 @@ class GSAinLCA:
 
         """
 
-        for input_ in self.inputs:          
+        for input_ in self.inputs:  
+
+            if input_ == 'biosphere':
+                continue        
 
             # 1 Technosphere
             tech_params    = self.inputs_dict[input_]['tech_params']
@@ -480,6 +486,10 @@ class GSAinLCA:
 
         #All exchanges in inputs
         for input_ in self.inputs:
+
+            if input_ == 'biosphere':
+                continue
+
             for i in self.inputs_dict[input_]['tech_params']:
                 act  = lca.reverse_dict() [ind_activity] [i['col']]
                 prod = lca.reverse_dict() [ind_product]  [i['row']]

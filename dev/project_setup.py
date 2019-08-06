@@ -12,6 +12,7 @@ bw.projects.set_current('Geothermal')
 from parameters.cge_model import GeothermalConventionalModel
 from parameters.cge_klausen import parameters
 from parameters.lookup_func import lookup_geothermal
+from exact import exact_first_total
 
 #Set up project parameters, model, etc
 gt_model = GeothermalConventionalModel()
@@ -31,12 +32,16 @@ method = ILCD[0]
 lca = bw.LCA(demand,method)
 
 # Run GSA
-inputs = ['geothermal energy']
+inputs = []
 gsa_in_lca = GSAinLCA(lca,inputs,parameters,gt_model)
 
 # Activities in the gsa_in_lca.inputs_dict
 n_dimensions = 0
 for input_ in inputs:
+
+    if input_ == 'biosphere':
+        continue
+
     print( input_ + ': ' +
            '# of tech and bio params -> ' 
             + str([ gsa_in_lca.inputs_dict[input_]['tech_n_params'], gsa_in_lca.inputs_dict[input_]['bio_n_params'] ]) )
@@ -49,8 +54,12 @@ print( 'parameterized activities: ' +
        '# of tech and bio params -> ' 
         + str([ gsa_in_lca.parameters_dict['tech_n_params'], gsa_in_lca.parameters_dict['bio_n_params'] ]) )
 
-# SALib implementation 
-N = 4
+
+
+################################
+##### SALib implementation #####
+################################
+N = 5
 calc_second_order = False
 problem = {
   'num_vars': n_dimensions,
@@ -58,7 +67,7 @@ problem = {
   'bounds': np.array([[0,1]]*n_dimensions)
 }
 
-# 1. Sobol indices
+# Sobol indices
 t0 = time.time()
 X  = saltelli.sample(problem, N, calc_second_order=calc_second_order)
 t1 = time.time()
@@ -78,9 +87,24 @@ t1 = time.time()
 print(str(t1-t0) + ' sec for Sobol analyze')
 
 gsa_in_lca.sa_pandas_append(sa_sobol)
+
+
+
+##########################
+##### Exact formulas #####
+##########################
+t0 = time.time()
+sa_exact_formula = exact_first_total(problem, N, gsa_in_lca.model)
+t1 = time.time()
+
+gsa_in_lca.sa_pandas_append(sa_exact_formula)
+print(str(t1-t0) + ' sec for exact formulas')
+
+# Sort results and save dataframe as .xlsx
+gsa_in_lca.sensitivity_indices_df = gsa_in_lca.sensitivity_indices_df.sort_values(['S1'], ascending = False)
+column_order = ['Inputs', 'Activities', 'Products or flows', 'S1', 'S1 exact', 'ST', 'ST exact', 'S1_conf', 'ST_conf']
+gsa_in_lca.sensitivity_indices_df = gsa_in_lca.sensitivity_indices_df.reindex(column_order, axis=1)
 gsa_in_lca.sensitivity_indices_df.to_excel('sa_indices.xlsx')
-
-
 
 
 
