@@ -54,12 +54,17 @@ print( 'parameterized activities: ' +
        '# of tech and bio params -> ' 
         + str([ gsa_in_lca.parameters_dict['tech_n_params'], gsa_in_lca.parameters_dict['bio_n_params'] ]) )
 
+<<<<<<< HEAD
+# SALib implementation 
+N = 500
+=======
 
 
 ################################
 ##### SALib implementation #####
 ################################
 N = 5
+>>>>>>> upstream/master
 calc_second_order = False
 problem = {
   'num_vars': n_dimensions,
@@ -87,6 +92,11 @@ t1 = time.time()
 print(str(t1-t0) + ' sec for Sobol analyze')
 
 gsa_in_lca.sa_pandas_append(sa_sobol)
+<<<<<<< HEAD
+name= "sa_indices_N" + str(N) + ".xlsx"
+gsa_in_lca.sensitivity_indices_df.to_excel(name)
+=======
+>>>>>>> upstream/master
 
 
 
