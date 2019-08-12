@@ -1,6 +1,6 @@
 import brightway2 as bw
 from gsa_lca import *
-from pygsa.saindices.sobol_indices import sobol_indices
+# from pygsa.saindices.sobol_indices import sobol_indices
 from SALib.sample import saltelli, fast_sampler
 from SALib.analyze import sobol, fast
 import time

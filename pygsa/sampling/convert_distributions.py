@@ -63,3 +63,7 @@ def convert_sample(params, sample):
         return convert_sample_to_normal_or_lognormal(params, sample, distr)
     else:
         return distr.ppf(params, sample)
+
+
+
+        
