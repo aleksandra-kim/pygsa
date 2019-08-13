@@ -25,7 +25,8 @@ demand = {electricity_prod_conv: 1}
 ILCD_CC = [method for method in bw.methods if "ILCD 2.0 2018 midpoint no LT" in str(method) and "climate change total" in str(method)]
 ILCD_HH = [method for method in bw.methods if "ILCD 2.0 2018 midpoint no LT" in str(method) and "human health" in str(method)]
 ILCD_EQ = [method for method in bw.methods if "ILCD 2.0 2018 midpoint no LT" in str(method) and "ecosystem quality" in str(method)]
-ILCD = ILCD_CC + ILCD_HH + ILCD_EQ
+ILCD_RE = [method for method in bw.methods if "ILCD 2.0 2018 midpoint no LT" in str(method) and "resources" in str(method)]
+ILCD = ILCD_CC + ILCD_HH + ILCD_EQ + ILCD_RE
 method = ILCD[0]
 
 # Run LCIA
@@ -54,17 +55,10 @@ print( 'parameterized activities: ' +
        '# of tech and bio params -> ' 
         + str([ gsa_in_lca.parameters_dict['tech_n_params'], gsa_in_lca.parameters_dict['bio_n_params'] ]) )
 
-<<<<<<< HEAD
-# SALib implementation 
-N = 500
-=======
-
-
 ################################
 ##### SALib implementation #####
 ################################
-N = 5
->>>>>>> upstream/master
+N = 50
 calc_second_order = False
 problem = {
   'num_vars': n_dimensions,
@@ -92,29 +86,27 @@ t1 = time.time()
 print(str(t1-t0) + ' sec for Sobol analyze')
 
 gsa_in_lca.sa_pandas_append(sa_sobol)
-<<<<<<< HEAD
-name= "sa_indices_N" + str(N) + ".xlsx"
+
+
+
+###########################
+###### Exact formulas #####
+###########################
+#t0 = time.time()
+#sa_exact_formula = exact_first_total(problem, N, gsa_in_lca.model)
+#t1 = time.time()
+#
+#gsa_in_lca.sa_pandas_append(sa_exact_formula)
+#print(str(t1-t0) + ' sec for exact formulas')
+#
+## Sort results and save dataframe as .xlsx
+#gsa_in_lca.sensitivity_indices_df = gsa_in_lca.sensitivity_indices_df.sort_values(['S1'], ascending = False)
+#column_order = ['Inputs', 'Activities', 'Products or flows', 'S1', 'S1 exact', 'ST', 'ST exact', 'S1_conf', 'ST_conf']
+#gsa_in_lca.sensitivity_indices_df = gsa_in_lca.sensitivity_indices_df.reindex(column_order, axis=1)
+
+
+name= "cge_sa_indices_N" + str(N) + ".xlsx"
 gsa_in_lca.sensitivity_indices_df.to_excel(name)
-=======
->>>>>>> upstream/master
-
-
-
-##########################
-##### Exact formulas #####
-##########################
-t0 = time.time()
-sa_exact_formula = exact_first_total(problem, N, gsa_in_lca.model)
-t1 = time.time()
-
-gsa_in_lca.sa_pandas_append(sa_exact_formula)
-print(str(t1-t0) + ' sec for exact formulas')
-
-# Sort results and save dataframe as .xlsx
-gsa_in_lca.sensitivity_indices_df = gsa_in_lca.sensitivity_indices_df.sort_values(['S1'], ascending = False)
-column_order = ['Inputs', 'Activities', 'Products or flows', 'S1', 'S1 exact', 'ST', 'ST exact', 'S1_conf', 'ST_conf']
-gsa_in_lca.sensitivity_indices_df = gsa_in_lca.sensitivity_indices_df.reindex(column_order, axis=1)
-gsa_in_lca.sensitivity_indices_df.to_excel('sa_indices.xlsx')
 
 
 
